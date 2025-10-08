@@ -9,7 +9,7 @@ import plotly.graph_objects as go
 from collections import defaultdict
 
 # ============ Page / style ============
-st.set_page_config(page_title="WeCov3r AI Engine", page_icon="🤖", layout="wide")
+st.set_page_config(page_title="WeCov3r AI Leg", page_icon="🤖", layout="wide")
 st.markdown(
     """
 <style>
@@ -39,7 +39,7 @@ div[data-testid="stCheckbox"] label { white-space: nowrap; }
   line-height: 1.1;
 }
 .wcvr-hero h1 .robot {
-  font-size: 1.4em; /* augmente UNIQUEMENT le robot (1.6–2.2em selon goût) */
+  font-size: 1.2em; /* augmente UNIQUEMENT le robot (1.6–2.2em selon goût) */
   line-height: 1;
   vertical-align: -0.12em;/* léger recentrage vertical de l’emoji */
   display: inline-block;  /* pour que vertical-align s’applique proprement */
@@ -47,7 +47,7 @@ div[data-testid="stCheckbox"] label { white-space: nowrap; }
 }
 </style>
 <div class="wcvr-hero">
-  <h1><span class="robot">🔄</span>&nbsp;&nbsp;&nbsp;WeCov3r AI Engine <span class="robot"> &nbsp;🔄</span></h1>
+  <h1><span class="robot">🔄</span>&nbsp;WeCov3r AI Leg <span class="robot">🔄</span></h1>
 </div>
 """,
     unsafe_allow_html=True,
@@ -550,7 +550,7 @@ col_left, col_right = st.columns([1.0, 1.2], gap="large")
 api_key    = st.secrets.get("WECOV3R_API_KEY", os.getenv("WECOV3R_API_KEY", ""))
 api_secret = st.secrets.get("WECOV3R_API_SECRET", os.getenv("WECOV3R_API_SECRET", ""))
 
-# optionally, block “Run AI” if secrets are missing
+# optionally, block “Run” if secrets are missing
 if not api_key or not api_secret:
     st.warning("API keys missing (WECOV3R_API_KEY / WECOV3R_API_SECRET). Add them to secrets.")
 
@@ -574,14 +574,14 @@ with col_left:
     genou  = r2a.number_input("Genou",  1.0, 1000.0, step=0.1, format="%.1f", key="genou")
     cuisse = r2b.number_input("Cuisse", 1.0, 1000.0, step=0.1, format="%.1f", key="cuisse")
 
-    # EEE FFF (Run AI / RAZ / Aplatir)
+    # EEE FFF (Run / RAZ / 2D)
     r3a, r3b = st.columns([1, 1], gap="small", vertical_alignment="bottom")
     taille = r3a.number_input("Taille", 1.0, 300.0, step=0.1, format="%.1f", key="taille")
 
     g_run, g_raz, g_flat = r3b.columns([1, 1, 1], gap="small", vertical_alignment="bottom")
-    run_btn = g_run.button("Run AI")
+    run_btn = g_run.button("Run")
     raz_btn = g_raz.button("RAZ")
-    do_unroll = g_flat.checkbox("Aplatir", True, key="aplatir")
+    do_unroll = g_flat.checkbox("2D", True, key="2d")
 
     if raz_btn:
         st.session_state["_do_raz"] = True
@@ -658,7 +658,7 @@ with col_right:
             st.markdown("<div style='height:2.6em'></div>", unsafe_allow_html=True)
 
     if data0 is None:
-        st.info("Run AI pour afficher le rendu")
+        st.info("Run pour afficher le rendu")
     else:
         if mode == "Rempli":
             draw_mesh_2d_filled(data0)
