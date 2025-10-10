@@ -547,7 +547,7 @@ def _add_boundary_edges3d(fig, x, y, z, elems, topo):
 def draw_mesh_3d_shaded(mesh_obj: dict, edge_mode: str = "Bord"):
   """
   Render a shaded 3D mesh with optional edge display.
-  edge_mode: "Aucune" | "Bord" | "Toutes"
+  edge_mode: "Aucune" | "Bord" | "Tout"
   """
   defn = mesh_obj.get("definition", {})
   nodes = defn.get("nodes") or []
@@ -565,7 +565,7 @@ def draw_mesh_3d_shaded(mesh_obj: dict, edge_mode: str = "Bord"):
   def add_edges_choice():
     if edge_mode == "Bord":
       _add_boundary_edges3d(fig, x, y, z, elems, topo)
-    elif edge_mode == "Toutes":
+    elif edge_mode == "Tout":
       _add_wire3d(fig, x, y, z, elems, topo, elidx)
     # "Aucune" -> do nothing
 
