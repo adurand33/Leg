@@ -675,7 +675,7 @@ with col_left:
   taille = r3a.number_input("Taille", 1.0, 300.0, step=0.1, format="%.1f", key="taille")
   g_run, g_raz, g_flat = r3b.columns([1, 1, 1], gap="small", vertical_alignment="bottom")
   run_btn = g_run.button("Run")
-  raz_btn = g_raz.button("RAZ")
+  raz_btn = g_raz.button("RÀZ")
   do_unroll = g_flat.checkbox("2D", True, key="2d")
 
   if raz_btn:
