@@ -115,8 +115,7 @@ if st.session_state["_do_raz"]:
 # ============ Format Helper ============
 def fmt1(x: Optional[float], decimals: int = 1) -> str:
   """
-  Format a number as a string with a specified number of decimal places.
-  If the input is None, return "—".
+  Format a number as a string with a specified number of decimal places, input is None, return "—".
   """
   if x is None:
     return "—"
@@ -195,88 +194,91 @@ def run_pipeline(curves: list, api_key: str, api_secret: str, do_unroll: bool = 
 
 # ============ Geometry (last point at 359°) ============
 def compute_curves(ankle_cm, calf_cm, knee_cm, thigh_cm, height_cm, nb_point=32):
-  """
-  Compute the curves for the leg geometry based on input measurements.
-  Returns curves and segment lengths in millimeters.
-  """
-  scale = 10.0  # Convert cm to mm
-  
-  # Offsets for garment fit (in cm, converted to mm)
-  garment_bot_offset = 6.0 * scale  # 1cm above ankle
-  garment_top_offset = 12.0 * scale  # 3cm below crotch
-    
-  v_ankle  = scale * float(ankle_cm)
-  v_calf   = scale * float(calf_cm)
-  v_knee   = scale * float(knee_cm)
-  v_thigh  = scale * float(thigh_cm)
-  v_height = scale * float(height_cm)
-
-  # Heights in mm
-  h_sole   = 0.000 * v_height  # Ground level
-  h_ankle  = 0.039 * v_height  # Ankle joint center
-  h_calf   = 0.200 * v_height  # Lower leg max
-  h_knee   = 0.285 * v_height  # Knee joint center
-  h_thigh  = 0.400 * v_height  # Upper leg max
-  h_crotch = 0.500 * v_height  # Leg top
-  
-  # Adjusted heights for garment
-  h_garment_bot = h_ankle + garment_bot_offset  # Slightly above ankle
-  h_garment_top = h_crotch - garment_top_offset # Slightly below crotch
-
-  # Calculated segment lengths in mm
-  leg_height          = h_crotch - h_sole
-  tibia_length        = h_knee - h_ankle
-  femur_length        = h_crotch - h_knee
-  femur_length_real   = 0.245 * v_height                       # From hip joint to knee
-  garment_length      = 0.98 * (h_garment_top - h_garment_bot) # Ankle to crotch (outer leg)
-
-  def circle_points_359(r, z, n=nb_point):
     """
-    Generate points for a circle at height z with radius r.
+    Compute the curves for the leg geometry based on input measurements, returns curves and segment lengths in millimeters.
     """
-    pts = []
-    if n <= 1:
-      pts.extend([r, 0.0, z])
-      return pts
-    end = math.radians(359.0)
-    step = end / (n - 1)
-    for i in range(n):
-      a = i * step
-      x = r * math.cos(a)
-      y = r * math.sin(a)
-      pts.extend([x, y, z])
-    return pts
+    scale = 10.0  # Convert cm to mm
 
-  # Radii in mm (circumference in cm → radius in mm)
-  r_ankle = v_ankle / (2.0 * math.pi)
-  r_calf  = v_calf  / (2.0 * math.pi)
-  r_knee  = v_knee  / (2.0 * math.pi)
-  r_thigh = v_thigh / (2.0 * math.pi)
+    v_ankle  = scale * float(ankle_cm)
+    v_calf   = scale * float(calf_cm)
+    v_knee   = scale * float(knee_cm)
+    v_thigh  = scale * float(thigh_cm)
+    v_height = scale * float(height_cm)
 
-  curves_pts = [
-    circle_points_359(r_ankle, h_garment_bot),
-    circle_points_359(r_calf,  h_calf),
-    circle_points_359(r_knee,  h_knee),
-    circle_points_359(r_thigh, h_thigh),
-    circle_points_359(r_thigh, h_garment_top),
-  ]
+    # Heights in mm
+    h_sole   = 0.000 * v_height # Ground level
+    h_ankle  = 0.039 * v_height # Ankle joint center
+    h_calf   = 0.200 * v_height # Lower leg max
+    h_knee   = 0.285 * v_height # Knee joint center
+    h_thigh  = 0.400 * v_height # Upper leg max
+    h_crotch = 0.500 * v_height # Leg top
 
-  curves = []
-  for i, pts in enumerate(curves_pts):
-    curves.append({
-      "definition": {"points": pts, "open": False},  # Closed semantics on service side
-      "properties": {"uuid": i, "name": f"curve_{i}", "type": "LINES", "scale": 1000},
-      "dimension": 3
-    })
+    # Calculate leg height (ankle to crotch)
+    leg_height = h_crotch - h_ankle
 
-  return {
-    "curves": curves,
-    "leg_height": leg_height,
-    "tibia_length": tibia_length,
-    "femur_length": femur_length,
-    "femur_length_real": femur_length_real,
-    "garment_length": garment_length,
-  }
+    # Dynamic offsets as a percentage of leg height
+    garment_bot_offset = 0.07 * leg_height # 7% of leg height above ankle
+    garment_top_offset = 0.14 * leg_height # 14% of leg height below crotch
+
+    # Adjusted heights for garment
+    h_garment_bot = h_ankle + garment_bot_offset  # Slightly above ankle
+    h_garment_top = h_crotch - garment_top_offset # Slightly below crotch
+
+    # Calculated segment lengths in mm
+    tibia_length      = h_knee - h_ankle
+    femur_length      = h_crotch - h_knee
+    femur_length_real = 0.245 * v_height  # From hip joint to knee
+    garment_length    = 0.98 * (h_garment_top - h_garment_bot)  # Outer leg length
+
+    def circle_points_359(r, z, n=nb_point):
+        """
+        Generate points for a circle at height z with radius r.
+        """
+        pts = []
+        if n <= 1:
+            pts.extend([r, 0.0, z])
+            return pts
+        end = math.radians(359.0)
+        step = end / (n - 1)
+        for i in range(n):
+            a = i * step
+            x = r * math.cos(a)
+            y = r * math.sin(a)
+            pts.extend([x, y, z])
+        return pts
+
+    # Radii in mm (circumference in cm → radius in mm)
+    r_ankle = v_ankle / (2.0 * math.pi)
+    r_calf  = v_calf  / (2.0 * math.pi)
+    r_knee  = v_knee  / (2.0 * math.pi)
+    r_thigh = v_thigh / (2.0 * math.pi)
+
+    curves_pts = [
+        circle_points_359(r_ankle, h_garment_bot),
+        circle_points_359(r_calf,  h_calf),
+        circle_points_359(r_knee,  h_knee),
+        circle_points_359(r_thigh, h_thigh),
+        circle_points_359(r_thigh, h_garment_top),
+    ]
+
+    curves = []
+    for i, pts in enumerate(curves_pts):
+        curves.append({
+            "definition": {"points": pts, "open": False},  # Closed semantics on service side
+            "properties": {"uuid": i, "name": f"curve_{i}", "type": "LINES", "scale": 1000},
+            "dimension": 3
+        })
+
+    return {
+        "curves": curves,
+        "leg_height": leg_height,
+        "tibia_length": tibia_length,
+        "femur_length": femur_length,
+        "femur_length_real": femur_length_real,
+        "garment_length": garment_length,
+        "garment_bot_offset_cm": garment_bot_offset / scale,  # Return in cm
+        "garment_top_offset_cm": garment_top_offset / scale,  # Return in cm
+    }
 
 # ============ Scaling for cm Display ============
 def _nodes_to_cm(nodes_mm: List[float]) -> Tuple[List[float], List[float], List[float]]:
@@ -546,8 +548,7 @@ def _add_boundary_edges3d(fig, x, y, z, elems, topo):
 # ============ 3D Rendering ============
 def draw_mesh_3d_shaded(mesh_obj: dict, edge_mode: str = "Bord"):
   """
-  Render a shaded 3D mesh with optional edge display.
-  edge_mode: "Aucune" | "Bord" | "Toutes"
+  Render a shaded 3D mesh with optional edge display, edge_mode: "Aucune" | "Bord" | "Toutes"
   """
   defn = mesh_obj.get("definition", {})
   nodes = defn.get("nodes") or []
