@@ -91,7 +91,7 @@ MESH_LIGHTPOS = dict(x=1.4, y=0.2, z=2.0)
 # ============ 3D Edge Styling ============
 EDGE3D_BORDER_WIDTH = 8             # 3D edge width
 EDGE3D_BORDER_COLOR = BRAND_VIOLET  # WeCov3r brand color
-# Optional 2D edge styling
+# ============ 2D Edge Styling ============
 EDGE2D_BORDER_WIDTH = 4             # 2D edge width
 EDGE2D_BORDER_COLOR = BRAND_VIOLET  # WeCov3r brand color
 
@@ -197,7 +197,7 @@ def compute_curves(ankle_cm, calf_cm, knee_cm, thigh_cm, height_cm, nb_point=32)
     """
     Compute the curves for the leg geometry based on input measurements, returns curves and segment lengths in millimeters.
     """
-    scale = 10.0  # Convert cm to mm
+    scale = 10.0 # Convert cm to mm
 
     v_ankle  = scale * float(ankle_cm)
     v_calf   = scale * float(calf_cm)
@@ -227,8 +227,8 @@ def compute_curves(ankle_cm, calf_cm, knee_cm, thigh_cm, height_cm, nb_point=32)
     # Calculated segment lengths in mm
     tibia_length      = h_knee - h_ankle
     femur_length      = h_crotch - h_knee
-    femur_length_real = 0.245 * v_height  # From hip joint to knee
-    garment_length    = 0.98 * (h_garment_top - h_garment_bot)  # Outer leg length
+    femur_length_real = 0.245 * v_height # From hip joint to knee
+    garment_length    = 0.98 * (h_garment_top - h_garment_bot) # Outer leg length
 
     def circle_points_359(r, z, n=nb_point):
         """
@@ -264,7 +264,7 @@ def compute_curves(ankle_cm, calf_cm, knee_cm, thigh_cm, height_cm, nb_point=32)
     curves = []
     for i, pts in enumerate(curves_pts):
         curves.append({
-            "definition": {"points": pts, "open": False},  # Closed semantics on service side
+            "definition": {"points": pts, "open": False}, # Closed semantics on service side
             "properties": {"uuid": i, "name": f"curve_{i}", "type": "LINES", "scale": 1000},
             "dimension": 3
         })
@@ -276,8 +276,8 @@ def compute_curves(ankle_cm, calf_cm, knee_cm, thigh_cm, height_cm, nb_point=32)
         "femur_length": femur_length,
         "femur_length_real": femur_length_real,
         "garment_length": garment_length,
-        "garment_bot_offset_cm": garment_bot_offset / scale,  # Return in cm
-        "garment_top_offset_cm": garment_top_offset / scale,  # Return in cm
+        "garment_bot_offset_cm": garment_bot_offset / scale, # Return in cm
+        "garment_top_offset_cm": garment_top_offset / scale, # Return in cm
     }
 
 # ============ Scaling for cm Display ============
@@ -727,11 +727,11 @@ with col_left:
   st.subheader("Calculs")
   r0, r1, r2 = st.columns([1, 1, 1])
   if data is None:
-    r0.write("Jambe (cm): —")
+    r0.write("Pièce (cm): —")
     r1.write("Aire (cm²): —")
     r2.write(("Volume (L): —") if (not do_unroll) else ("Bord (cm): —"))
   else:
-    r0.write(f"**Jambe (cm)** : {fmt1(garment_length_cm)}")
+    r0.write(f"**Pièce (cm)** : {fmt1(garment_length_cm)}")
     sqrt_area = math.sqrt(area_cm2) if area_cm2 is not None else 0
     r1.write(f"**Aire (cm²)** : {fmt1(sqrt_area, 0)} × {fmt1(sqrt_area, 0)}")
     if do_unroll:
