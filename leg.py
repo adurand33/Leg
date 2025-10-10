@@ -420,7 +420,7 @@ def draw_mesh_2d_wire(mesh_obj: dict):
   elidx = defn.get("elementsLastIndex")
 
   if len(nodes) < 6:
-    st.warning("No usable nodes.")
+    st.warning("Pas assez de points")
     return
 
   x, y = _nodes2d_to_cm(nodes)
@@ -556,7 +556,7 @@ def draw_mesh_3d_shaded(mesh_obj: dict, edge_mode: str = "Bord"):
   elidx = defn.get("elementsLastIndex")
 
   if len(nodes) < 9:
-    st.warning("No usable 3D nodes.")
+    st.warning("Pas assez de points")
     return
 
   x, y, z = _nodes_to_cm(nodes)
@@ -627,7 +627,7 @@ def draw_mesh_3d_wire(mesh_obj: dict):
   elidx = defn.get("elementsLastIndex")
 
   if len(nodes) < 9:
-    st.warning("No usable 3D nodes.")
+    st.warning("Pas assez de points")
     return
 
   x, y, z = _nodes_to_cm(nodes)
@@ -649,7 +649,7 @@ api_secret = st.secrets.get("WECOV3R_API_SECRET", os.getenv("WECOV3R_API_SECRET"
 
 # Optionally, block Run if secrets are missing
 if not api_key or not api_secret:
-  st.warning("API keys missing (WECOV3R_API_KEY / WECOV3R_API_SECRET). Add them to secrets.")
+  st.warning("Clés WeCov3r manquantes ")
 
 data = None
 garment_length_cm = None
@@ -674,7 +674,7 @@ with col_left:
   taille = r3a.number_input("Taille", 1.0, 300.0, step=0.1, format="%.1f", key="taille")
   g_run, g_raz, g_flat = r3b.columns([1, 1, 1], gap="small", vertical_alignment="bottom")
   run_btn = g_run.button("Run")
-  raz_btn = g_raz.button("Reset")
+  raz_btn = g_raz.button("RAZ")
   do_unroll = g_flat.checkbox("2D", True, key="2d")
 
   if raz_btn:
@@ -686,7 +686,7 @@ with col_left:
 if run_btn:
   if not api_key or not api_secret:
     with col_left:
-      st.error("API keys missing. Add them in .streamlit/secrets.toml.")
+      st.error("Clés WeCov3r manquantes !")
   else:
     try:
       result = compute_curves(cheville, mollet, genou, cuisse, taille)
@@ -702,23 +702,23 @@ if run_btn:
       real_femur_length_cm = real_femur_length / 10.0
       garment_length_cm = garment_length / 10.0
 
-      curves = result["curves"]
-      resp = run_pipeline(curves, api_key, api_secret, do_unroll=do_unroll)
-      data = (resp or {}).get("data", [{}])[0]
-      infos     = data.get("infos", {})
-      area_m2   = infos.get("area")
-      perimeter_m = infos.get("perimeter")
-      volume_m3   = infos.get("volume")
+      curves  = result["curves"]
+      resp    = run_pipeline(curves, api_key, api_secret, do_unroll=do_unroll)
+      data    = (resp or {}).get("data", [{}])[0]
+      infos   = data.get("infos", {})
+      area_m2 = infos.get("area")
+      perim_m = infos.get("perimeter")
+      vol_m3  = infos.get("volume")
 
       area_cm2 = area_m2 * 10000.0 if isinstance(area_m2, (int, float)) else None
-      perim_cm = perimeter_m * 100.0 if isinstance(perimeter_m, (int, float)) else None
-      vol_l  = volume_m3 * 1000.0 if isinstance(volume_m3, (int, float)) else None
+      perim_cm = perim_m * 100.0 if isinstance(perim_m, (int, float)) else None
+      vol_l  = vol_m3 * 1000.0 if isinstance(vol_m3, (int, float)) else None
     except requests.HTTPError as e:
       with col_left:
-        st.error(f"HTTP Error: {e.response.status_code} — {e.response.text[:300]}")
+        st.error(f"HTTP Erreur: {e.response.status_code} — {e.response.text[:300]}")
     except Exception as ex:
       with col_left:
-        st.error(f"Error: {ex}")
+        st.error(f"Erreur: {ex}")
 
 # Display results
 with col_left:
