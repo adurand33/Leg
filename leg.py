@@ -377,7 +377,7 @@ st.markdown(
 }}
 .wcvr-hero h1 {{
   position: relative;            /* absolute logo container */
-  font-size: 30px;
+  font-size: 28px;
   line-height: 1.1;
   padding-left: calc(2.2em + 10px); /* room for logo */
 }}
@@ -392,7 +392,7 @@ st.markdown(
   filter: drop-shadow(0 1px 0 rgba(0,0,0,.15));
 }}
 .wcvr-hero h1 .robot {{
-  font-size: 1em;
+  font-size: 0.9em;
   line-height: 1;
   vertical-align: -0.12em;
   display: inline-block;
