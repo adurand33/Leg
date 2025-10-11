@@ -379,7 +379,7 @@ st.markdown(
   position: relative;            /* absolute logo container */
   font-size: 28px;
   line-height: 1.1;
-  padding-left: calc(2.2em + 10px); /* room for logo */
+  padding-left: calc(2em + 4px); /* room for logo */
 }}
 .wcvr-hero h1 .wcvr-logo {{
   height: 2em;
