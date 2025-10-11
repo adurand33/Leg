@@ -36,7 +36,7 @@ def PlotFrench(
     *,
     height=450,
     axis_color="#ffffff",  # same color for tick marks + labels
-    ticks=None,            # None = auto ticks
+    ticks=None,            # auto ticks
     ticklen=10,            # label spacing
     grid_alpha=0.18,       # faint grid
     pad_ratio=0.12,        # slight zoom out
@@ -191,7 +191,7 @@ def PlotFrench(
   }}
 
   // 2d padded autoscale
-  function autoScale2D(gd, s) {{
+  function AutoScale2D(gd, s) {{
     let xs = [], ys = [];
     (gd.data || []).forEach(tr => {{
       if (tr && !is3dType(tr.type) && !tr.scene && tr.x && tr.y) {{
@@ -212,7 +212,7 @@ def PlotFrench(
   }}
 
   // capture baseline cameras once
-  function snapshotDefaultCameras(gd) {{
+  function SnapshotDefaultCameras(gd) {{
     const scenes = Object.keys(gd._fullLayout || {{}}).filter(k => /^scene\\d*$/.test(k));
     gd._wec_default_cams = gd._wec_default_cams || {{}};
     scenes.forEach(sc => {{
@@ -241,7 +241,7 @@ def PlotFrench(
   }}
 
   // apply scaled default camera
-  function applyScaledDefaultCamera(gd, scale) {{
+  function ApplyScaledDefaultCamera(gd, scale) {{
     const bases = gd._wec_default_cams || {{}};
     const ups = {{}};
     const scenes = Object.keys(gd._fullLayout || {{}}).filter(k => /^scene\\d*$/.test(k));
@@ -324,14 +324,14 @@ def PlotFrench(
   cfg.modeBarButtonsToRemove = cfg.modeBarButtonsToRemove.concat(['resetCameraDefault3d']);
   const btnResetCrossMode = {{
     name: 'resetCameraDefault3d',
-    title: 'Caméra par défaut',
+    title: 'Recentrer',
     icon: Plotly.Icons.home,
     click: function(gd) {{
       const tasks = [];
       const has3d = Object.keys(gd._fullLayout || {{}}).some(k => /^scene\\d*$/.test(k));
-      if (has3d) tasks.push(applyScaledDefaultCamera(gd, DEFAULT_CAMERA_SCALE));
+      if (has3d) tasks.push(ApplyScaledDefaultCamera(gd, DEFAULT_CAMERA_SCALE));
       const has2d = (gd.data || []).some(tr => tr && !is3dType(tr.type) && !tr.scene && tr.x && tr.y);
-      if (has2d) tasks.push(autoScale2D(gd, SCALE_2D));
+      if (has2d) tasks.push(AutoScale2D(gd, SCALE_2D));
       return Promise.all(tasks);
     }}
   }};
@@ -341,10 +341,10 @@ def PlotFrench(
 
   // render
   Plotly.newPlot(el, spec.data, spec.layout, cfg).then(gd => {{
-    const scenes = snapshotDefaultCameras(gd);
-    if (scenes.length) applyScaledDefaultCamera(gd, DEFAULT_CAMERA_SCALE);
+    const scenes = SnapshotDefaultCameras(gd);
+    if (scenes.length) ApplyScaledDefaultCamera(gd, DEFAULT_CAMERA_SCALE);
     const has2d = (gd.data || []).some(tr => tr && !is3dType(tr.type) && !tr.scene && tr.x && tr.y);
-    if (has2d) autoScale2D(gd, SCALE_2D);
+    if (has2d) AutoScale2D(gd, SCALE_2D);
   }});
 
   // responsive
@@ -353,15 +353,8 @@ def PlotFrench(
 </script>
 """, height=height)
 
-# plotly config
-PLOTLY_CONFIG = {
-    "locale": "fr",
-    "displaylogo": False,
-    "toImageButtonOptions": {"format": "png", "filename": "wecov3r"}
-}
-
 # page / style
-st.set_page_config(page_title="AI Garment", page_icon="🤖", layout="wide")
+st.set_page_config(page_title="Vêtement AI", page_icon="🤖", layout="wide")
 
 # logo (base64 inline)
 _logo_path = pathlib.Path("logo.png")
@@ -384,12 +377,12 @@ st.markdown(
 }}
 .wcvr-hero h1 {{
   position: relative;            /* absolute logo container */
-  font-size: 40px;
+  font-size: 34px;
   line-height: 1.1;
-  padding-left: calc(2.6em + 10px); /* room for logo */
+  padding-left: calc(2.2em + 10px); /* room for logo */
 }}
 .wcvr-hero h1 .wcvr-logo {{
-  height: 2.6em;
+  height: 2.5em;
   width: auto;
   position: absolute;
   left: 0;
@@ -399,7 +392,7 @@ st.markdown(
   filter: drop-shadow(0 1px 0 rgba(0,0,0,.15));
 }}
 .wcvr-hero h1 .robot {{
-  font-size: 1.6em;
+  font-size: 1em;
   line-height: 1;
   vertical-align: -0.12em;
   display: inline-block;
@@ -424,7 +417,7 @@ div[data-testid="stCheckbox"] label {{ white-space: nowrap; }}
 <div class="wcvr-hero">
   <h1>
     {f'<img class="wcvr-logo" src="data:image/png;base64,{_logo_b64}" alt="WeCov3r" />' if _logo_b64 else ''}
-    <span class="robot">🔄</span>&nbsp;Vêtement AI <span class="robot">🔄</span>
+    <span class="robot">🔄</span>&thinsp;Vêtement AI&thinsp;<span class="robot">🔄</span>
   </h1>
 </div>
 """,
@@ -958,10 +951,8 @@ def DrawMeshWire3D(mesh_obj: dict):
 col_left, col_right = st.columns([1.0, 1.2], gap="large")
 
 # api keys (fallback local)
-# api_key    = st.secrets.get("WECOV3R_API_KEY", os.getenv("WECOV3R_API_KEY", ""))
-# api_secret = st.secrets.get("WECOV3R_API_SECRET", os.getenv("WECOV3R_API_SECRET", ""))
-api_key    = "bc1794e6d394e7ce19d3"   # demo
-api_secret = "5f1da2aa59506f580a0f"   # demo
+api_key    = st.secrets.get("WECOV3R_API_KEY", os.getenv("WECOV3R_API_KEY", ""))
+api_secret = st.secrets.get("WECOV3R_API_SECRET", os.getenv("WECOV3R_API_SECRET", ""))
 
 if not api_key or not api_secret:
   st.warning("Clés WeCov3r manquantes ")
@@ -1070,7 +1061,7 @@ with col_right:
       edge_mode = st.selectbox("Arêtes", ["Aucun", "Bord", "Toutes"], index=1)
     else:
       edge_mode = "None"
-      st.markdown("<div style='height:2.6em'></div>", unsafe_allow_html=True)
+      st.markdown("<div style='height:2.5em'></div>", unsafe_allow_html=True)
 
   if data is None:
     st.info("Run pour lancer le calcul")
