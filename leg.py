@@ -514,6 +514,7 @@ def RunPipeline(curves: list, api_key: str, api_secret: str, do_unroll: bool = T
       {"key": "ENABLE_AUTOFILL", "type": "BOOL", "value": True},
       {"key": "ENABLE_MATCH", "type": "BOOL", "value": True},
       {"key": "ENABLE_RIGID", "type": "BOOL", "value": True},
+      {"key": "ADAPT_MODE", "type": "INT", "value": 0},
       {"key": "RIGID_RATIO", "type": "FLOAT", "value": 0.5},
       {"key": "ENABLE_FULL", "type": "BOOL", "value": False},
       {"key": "ENABLE_REINDEX", "type": "BOOL", "value": False},
