@@ -466,8 +466,8 @@ def CallAPI(url: str, payload: dict, bearer: Optional[str] = None, timeout_s: fl
   # simple post wrapper
   headers = {
     "Content-Type": "application/json",
-    "Referer": "",
-    "X-Requested-With": "XMLHttpRequest",
+    "Referer": "https://yourleg.streamlit.app/",
+    "X-Requested-With": "",
   }
   if bearer:
     headers["Authorization"] = f"Bearer {bearer}"
