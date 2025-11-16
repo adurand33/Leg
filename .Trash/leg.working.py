@@ -1,5 +1,5 @@
 #
-# wecov3r studio leg
+# leg.py — WeCov3r Studio Leg
 #
 import math
 from typing import Optional, List, Tuple, Dict
@@ -14,9 +14,8 @@ from collections import defaultdict
 from streamlit.components.v1 import html
 import plotly.graph_objects as go
 
-# colors/util
 def ConvertHexToRGB(h: str, a: float) -> str:
-    # "#abc" or "#aabbcc" -> css rgba
+    # "#abc" or "#aabbcc" -> rgba(r,g,b,a)
     h = (h or "#262730").lstrip("#")
     if len(h) == 3: h = "".join(c*2 for c in h)
     r, g, b = int(h[:2],16), int(h[2:4],16), int(h[4:],16)
@@ -30,67 +29,65 @@ def GetExtents(vals):
             mn = min(mn, v); mx = max(mx, v)
     return (None, None) if mn is math.inf else (mn, mx)
 
-# unified plotly renderer (fr + ui tweaks)
 def PlotFrench(
     fig,
     *,
     height=450,
-    axis_color="#ffffff",  # same color for tick marks + labels
-    ticks=None,            # auto ticks
-    ticklen=10,            # label spacing
-    grid_alpha=0.18,       # faint grid
-    pad_ratio=0.12,        # slight zoom out
-    margin_left=70,        # room so y labels never clip
-    margin_bot=64,         # room for "cm"
+    axis_color="#ffffff", # same color for tick marks + labels
+    ticks=None,           # set to None for auto ticks (-20, -10, 0, 10, 20)
+    ticklen=10,           # spacing between tick mark and label
+    grid_alpha=0.18,      # faint horizontal grid
+    pad_ratio=0.12,       # zoom out a bit
+    margin_left=70,       # extra room so y labels never clip
+    margin_bot=64,        # add this (more room for "cm")
 ):
-    # theme/text colors
+    # theme colors
     theme_text = st.get_option("theme.textColor") or axis_color
     axis_color = axis_color or theme_text
     grid_color = ConvertHexToRGB(axis_color, grid_alpha)
 
-    # clone + base style
+    # clone and base style
     f = go.Figure(fig)
     f.update_layout(
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(color=theme_text),
+        font=dict(color=theme_text),     # general text (titles, legend)
         margin=dict(l=margin_left, r=16, t=12, b=margin_bot),
         hovermode=False
     )
 
-    # x axis: no box/grid, readable ticks
+    # x axis: no grid, no outer line (no box), readable ticks
     f.update_xaxes(
         showline=False,
         showgrid=False, gridcolor=grid_color, gridwidth=1,
         zeroline=False,
         automargin=True,
         showticklabels=True,
-        ticks="outside",
-        ticklen=ticklen,
-        tickcolor="rgba(0,0,0,0)",  # hide tick mark
-        tickwidth=0,
-        ticklabelposition="outside",
+        ticks="outside",             # use outside ticks to get spacing
+        ticklen=10,                  # space between grid and labels (tune 8..14)
+        tickcolor="rgba(0,0,0,0)",   # hide the tick mark
+        tickwidth=0,                 # make sure it stays invisible
+        ticklabelposition="outside", # keep labels outside the plot area
         tickfont=dict(color=axis_color),
     )
-    # y axis: only horizontal grid, no box
+    # y axis: only horizontal grid, no outer line
     f.update_yaxes(
         showline=False,
         showgrid=True, gridcolor=grid_color, gridwidth=1,
         zeroline=False,
         automargin=True,
         showticklabels=True,
-        ticks="outside",
-        ticklen=ticklen,
-        tickcolor="rgba(0,0,0,0)",
-        tickwidth=0,
-        ticklabelposition="outside",
+        ticks="outside",             # use outside ticks to get spacing
+        ticklen=10,                  # space between grid and labels (tune 8..14)
+        tickcolor="rgba(0,0,0,0)",   # hide the tick mark
+        tickwidth=0,                 # make sure it stays invisible
+        ticklabelposition="outside", # keep labels outside the plot area
         tickfont=dict(color=axis_color),
     )
 
-    # ensure ticks visible and labels never clip
+    # force visible ticks and expand ranges so labels always show
     if ticks is not None:
-        tickvals = list(ticks)
-        ticktext = [str(v) for v in tickvals]
+        tickvals = list(ticks); ticktext = [str(v) for v in tickvals]
         f.update_xaxes(tickmode="array", tickvals=tickvals, ticktext=ticktext)
         f.update_yaxes(tickmode="array", tickvals=tickvals, ticktext=ticktext)
 
@@ -113,7 +110,7 @@ def PlotFrench(
         f.update_xaxes(range=[xmin - px, xmax + px])
         f.update_yaxes(range=[ymin - py, ymax + py])
 
-    # 3d: minimal frame + readable ticks
+    # 3d: keep minimal (no box/grid), readable ticks
     if "scene" in f.layout:
         f.update_scenes(
             bgcolor="rgba(0,0,0,0)",
@@ -125,7 +122,7 @@ def PlotFrench(
                        tickfont=dict(color=axis_color)),
         )
 
-    # embed with fr locale + custom modebar
+    # render with fr locale
     div_id = f"plotly-fr-{uuid.uuid4().hex}"
     cfg = {"locale": "fr", "displaylogo": False}
     html(f"""
@@ -149,11 +146,11 @@ def PlotFrench(
 (function() {{
   const el   = document.getElementById("{div_id}");
   const spec = {f.to_json()};
-  const cfg  = {json.dumps(cfg)}; // keep plotly config (locale, filename, etc.)
+  const cfg  = {json.dumps(cfg)}; // keep your plotly config (locale, filename, etc.)
 
-  // constants
-  const DEFAULT_CAMERA_SCALE = 1.7; // 3d default camera scale
-  const SCALE_2D = 1.2;             // 2d padded autoscale
+  // settings
+  const DEFAULT_CAMERA_SCALE = 1.7; // 3d scaled "default camera"
+  const SCALE_2D = 1.2;             // 2d padded autoscale factor
   const MIN_EYE = 0.05, MAX_EYE = 1e6;
 
   try {{
@@ -162,7 +159,7 @@ def PlotFrench(
     }}
   }} catch (e) {{}}
 
-  // remove unwanted buttons including official png, saved 3d cam, 2d autoscale/reset
+  // remove unwanted buttons (incl. official PNG, saved 3d camera, 2d autoscale/reset)
   cfg.modeBarButtonsToRemove = (cfg.modeBarButtonsToRemove || []).concat([
     'toImage',
     'toggleSpikelines',
@@ -176,8 +173,7 @@ def PlotFrench(
   ]);
 
   // helpers
-  const is3dType = t => ['mesh3d','scatter3d','surface','cone','streamtube','isosurface','volume']
-                        .includes((t||'').toLowerCase());
+  const is3dType = t => ['mesh3d','scatter3d','surface','cone','streamtube','isosurface','volume'].includes((t||'').toLowerCase());
 
   function GetExtents(arr) {{
     let mn = Infinity, mx = -Infinity;
@@ -190,8 +186,8 @@ def PlotFrench(
     return [mn, mx];
   }}
 
-  // 2d padded autoscale
-  function AutoScale2D(gd, s) {{
+  // 2d padded autoscale: compute data extents on all non-3d cartesian traces
+  function autoScale2D(gd, s) {{
     let xs = [], ys = [];
     (gd.data || []).forEach(tr => {{
       if (tr && !is3dType(tr.type) && !tr.scene && tr.x && tr.y) {{
@@ -211,8 +207,8 @@ def PlotFrench(
     }});
   }}
 
-  // capture baseline cameras once
-  function SnapshotDefaultCameras(gd) {{
+  // capture baseline default cameras once (from initial fullLayout)
+  function snapshotDefaultCameras(gd) {{
     const scenes = Object.keys(gd._fullLayout || {{}}).filter(k => /^scene\\d*$/.test(k));
     gd._wec_default_cams = gd._wec_default_cams || {{}};
     scenes.forEach(sc => {{
@@ -240,8 +236,8 @@ def PlotFrench(
     return scenes;
   }}
 
-  // apply scaled default camera
-  function ApplyScaledDefaultCamera(gd, scale) {{
+  // apply "scaled default camera" (for initial 3d view + reset button)
+  function applyScaledDefaultCamera(gd, scale) {{
     const bases = gd._wec_default_cams || {{}};
     const ups = {{}};
     const scenes = Object.keys(gd._fullLayout || {{}}).filter(k => /^scene\\d*$/.test(k));
@@ -268,7 +264,7 @@ def PlotFrench(
     return Promise.resolve();
   }}
 
-  // custom png export (forces black axes in export)
+  // custom "png (axes)" exporter (black axes in png)
   const exportAxisColor = '#000000';
   const btnPngAxes = {{
     name: 'PNG (axes)',
@@ -299,7 +295,7 @@ def PlotFrench(
           on[`${{axName}}.title.font.color`]     = exportAxisColor;
         }});
 
-      // 3d axis text
+      // 3d axes text colors
       Object.keys(gd.layout)
         .filter(k => /^scene\\d*$/.test(k))
         .forEach(sceneName => {{
@@ -320,48 +316,63 @@ def PlotFrench(
     }}
   }};
 
-  // cross-mode reset: 3d → scaled default camera, 2d → padded autoscale
+  // replace built-in "reset to default camera" with a cross-mode reset:
+  // 3d -> scaled default camera; 2d -> padded autoscale
   cfg.modeBarButtonsToRemove = cfg.modeBarButtonsToRemove.concat(['resetCameraDefault3d']);
   const btnResetCrossMode = {{
     name: 'resetCameraDefault3d',
-    title: 'Recentrer',
+    title: 'Caméra par défaut',
     icon: Plotly.Icons.home,
     click: function(gd) {{
       const tasks = [];
+      // 3d part
       const has3d = Object.keys(gd._fullLayout || {{}}).some(k => /^scene\\d*$/.test(k));
-      if (has3d) tasks.push(ApplyScaledDefaultCamera(gd, DEFAULT_CAMERA_SCALE));
+      if (has3d) tasks.push(applyScaledDefaultCamera(gd, DEFAULT_CAMERA_SCALE));
+      // 2d part
       const has2d = (gd.data || []).some(tr => tr && !is3dType(tr.type) && !tr.scene && tr.x && tr.y);
-      if (has2d) tasks.push(AutoScale2D(gd, SCALE_2D));
+      if (has2d) tasks.push(autoScale2D(gd, SCALE_2D));
       return Promise.all(tasks);
     }}
   }};
 
-  // add reset first, png last
+  // add reset first, then png last (rightmost)
   cfg.modeBarButtonsToAdd = (cfg.modeBarButtonsToAdd || []).concat([btnResetCrossMode, btnPngAxes]);
 
   // render
   Plotly.newPlot(el, spec.data, spec.layout, cfg).then(gd => {{
-    const scenes = SnapshotDefaultCameras(gd);
-    if (scenes.length) ApplyScaledDefaultCamera(gd, DEFAULT_CAMERA_SCALE);
+    // snapshot default cameras and apply scaled default for initial 3d view
+    const scenes = snapshotDefaultCameras(gd);
+    if (scenes.length) {{
+      applyScaledDefaultCamera(gd, DEFAULT_CAMERA_SCALE);
+    }}
+    // apply 2d padded autoscale for initial 2d view
     const has2d = (gd.data || []).some(tr => tr && !is3dType(tr.type) && !tr.scene && tr.x && tr.y);
-    if (has2d) AutoScale2D(gd, SCALE_2D);
+    if (has2d) {{
+      autoScale2D(gd, SCALE_2D);
+    }}
   }});
 
-  // responsive
+  // keep responsive
   window.addEventListener('resize', () => Plotly.Plots.resize(el));
 }})();
 </script>
 """, height=height)
 
-# page / style
-st.set_page_config(page_title="Vêtement AI", page_icon="🤖", layout="wide")
+PLOTLY_CONFIG = {
+    "locale": "fr", # <= force locale Plotly.js
+    "displaylogo": False,
+    "toImageButtonOptions": {"format": "png", "filename": "wecov3r"}
+}
 
-# logo (base64 inline)
-_logo_path = pathlib.Path("logo.png")
+# ============ Page / Style ============
+st.set_page_config(page_title="AI Garment", page_icon="🤖", layout="wide")
+
+import base64, pathlib
+_logo_path = pathlib.Path("logo.png")  # put the file next to your script
 try:
     _logo_b64 = base64.b64encode(_logo_path.read_bytes()).decode("ascii")
 except Exception:
-    _logo_b64 = ""
+    _logo_b64 = ""  # no logo if file missing
 
 st.markdown(
   f"""
@@ -376,23 +387,25 @@ st.markdown(
   text-align: center;
 }}
 .wcvr-hero h1 {{
-  position: relative;            /* absolute logo container */
-  font-size: 28px;
+  position: relative;            /* allows absolute logo */
+  font-size: 40px;               /* your existing size */
   line-height: 1.1;
-  padding-left: calc(2em + 4px); /* room for logo */
+  padding-left: calc(2.6em + 10px);/* room for the logo (size + gap) */
 }}
+/* new: tiny logo rules — keeps title height, aligns logo left */
 .wcvr-hero h1 .wcvr-logo {{
-  height: 2em;
+  /* set the desired logo size here */
+  height: 2.6em;                   /* e.g. 2.6em; change as you like */
   width: auto;
   position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  display: block;
+  left: 0;                       /* stick to the left edge */
+  top: 50%;                      /* vertical center */
+  transform: translateY(-50%);   /* true vertical centering */
+  display: block;                /* no baseline gap */
   filter: drop-shadow(0 1px 0 rgba(0,0,0,.15));
 }}
 .wcvr-hero h1 .robot {{
-  font-size: 0.9em;
+  font-size: 1.6em;
   line-height: 1;
   vertical-align: -0.12em;
   display: inline-block;
@@ -416,31 +429,35 @@ div[data-testid="stCheckbox"] label {{ white-space: nowrap; }}
 
 <div class="wcvr-hero">
   <h1>
+    <!-- logo on the left; hidden if file wasn’t found -->
     {f'<img class="wcvr-logo" src="data:image/png;base64,{_logo_b64}" alt="WeCov3r" />' if _logo_b64 else ''}
-    <span class="robot">🔄</span>&thinsp;Vêtement AI&thinsp;<span class="robot">🔄</span>
+    <span class="robot">🔄</span>&nbsp;AI Vêtement <span class="robot">🔄</span>
   </h1>
 </div>
 """,
   unsafe_allow_html=True,
 )
 
-# brand colors & lighting
-BRAND_VIOLET = "#401189"
-BRAND_VIOLET_RGBA = "rgba(64,17,137,0.25)"
-SHADING_VIOLET = "#6B4AE6"
+# ============ Brand Colors & Lighting ============
+BRAND_VIOLET = "#401189"                   # Brand color for lines (2D)
+BRAND_VIOLET_RGBA = "rgba(64,17,137,0.25)" # 2D fill color with transparency
+SHADING_VIOLET = "#6B4AE6"                 # Lighter 3D violet for shading
 
+# Shading and light settings for 3D rendering
 MESH_LIGHTING = dict(ambient=0.55, diffuse=1.0, specular=0.45, roughness=0.80)
 MESH_LIGHTPOS = dict(x=1.4, y=0.2, z=2.0)
 
-# edge styles
-EDGE3D_BORDER_WIDTH = 8
-EDGE3D_BORDER_COLOR = BRAND_VIOLET
-EDGE2D_BORDER_WIDTH = 4
-EDGE2D_BORDER_COLOR = BRAND_VIOLET
+# ============ 3D Edge Styling ============
+EDGE3D_BORDER_WIDTH = 8             # 3D edge width
+EDGE3D_BORDER_COLOR = BRAND_VIOLET  # WeCov3r brand color
+# ============ 2D Edge Styling ============
+EDGE2D_BORDER_WIDTH = 4             # 2D edge width
+EDGE2D_BORDER_COLOR = BRAND_VIOLET  # WeCov3r brand color
 
-# defaults / session state
+# ============ Defaults & Session State ============
 DEFAULTS = {"cheville": 25.0, "mollet": 38.0, "genou": 39.0, "cuisse": 49.0, "taille": 182.0}
 
+# Initialize session state with defaults
 for key, value in DEFAULTS.items():
   if key not in st.session_state:
     st.session_state[key] = value
@@ -448,22 +465,20 @@ for key, value in DEFAULTS.items():
 if "_do_raz" not in st.session_state:
   st.session_state["_do_raz"] = False
 
-# reset if requested
+# Reset to defaults if requested
 if st.session_state["_do_raz"]:
   for key, value in DEFAULTS.items():
     st.session_state[key] = value
   st.session_state["_do_raz"] = False
 
-# format helper
+# ============ Format Helper ============
 def Format1(x: Optional[float], decimals: int = 1) -> str:
-  # number → string with thin spacing
   if x is None:
     return "—"
   return f"{x:,.{decimals}f}".replace(",", " ")
 
-# http helpers
+# ============ HTTP Helpers ============
 def CallAPI(url: str, payload: dict, bearer: Optional[str] = None, timeout_s: float = 30.0) -> dict:
-  # simple post wrapper
   headers = {
     "Content-Type": "application/json",
     "Origin": "https://wecov3r.com",
@@ -476,19 +491,17 @@ def CallAPI(url: str, payload: dict, bearer: Optional[str] = None, timeout_s: fl
   response.raise_for_status()
   return response.json()
 
-def RunPipeline(curves: list, api_key: str, api_secret: str, api_user: int, do_unroll: bool = True) -> dict:
-  # connect
-  r1 = CallAPI("https://wecov3r.com/api/connect", {"k": api_key, "s": api_secret, "usr": api_user})
-  st.write("API response:", r1)  # Debug line
-
+def RunPipeline(curves: list, api_key: str, api_secret: str, do_unroll: bool = True) -> dict:
+  # 1) Connect to the API
+  r1 = CallAPI("https://wecov3r.com/api/connect", {"k": api_key, "s": api_secret})
   ctx_code = r1.get("data")
 
-  # token
+  # 2) Get token
   r2 = CallAPI("https://wecov3r.com/api/token", {"c": ctx_code, "u": "mesh"})
   data2 = r2.get("data")
   token = data2.get("token") if isinstance(data2, dict) else data2
 
-  # mesh (wire)
+  # 3) Generate mesh (wire mode)
   op_wire = {
     "id": "meshWIRE",
     "params": [
@@ -508,7 +521,7 @@ def RunPipeline(curves: list, api_key: str, api_secret: str, api_user: int, do_u
   if not do_unroll:
     return r3
 
-  # unroll
+  # 4) Unroll mesh
   op_unroll = {
     "id": "meshUNROLL",
     "params": [
@@ -529,42 +542,41 @@ def RunPipeline(curves: list, api_key: str, api_secret: str, api_user: int, do_u
   r4 = CallAPI("https://wecov3r.com/api/mesh", payload2, bearer=token)
   return r4
 
-# geometry (last point at 359°)
+# ============ Geometry (last point at 359°) ============
 def ComputeCurves(ankle_cm, calf_cm, knee_cm, thigh_cm, height_cm, nb_point=32):
-    # convert cm to mm
-    scale = 10.0
+    scale = 10.0 # Convert cm to mm
+
     v_ankle  = scale * float(ankle_cm)
     v_calf   = scale * float(calf_cm)
     v_knee   = scale * float(knee_cm)
     v_thigh  = scale * float(thigh_cm)
     v_height = scale * float(height_cm)
 
-    # heights in mm
-    h_sole   = 0.000 * v_height
-    h_ankle  = 0.039 * v_height
-    h_calf   = 0.200 * v_height
-    h_knee   = 0.285 * v_height
-    h_thigh  = 0.400 * v_height
-    h_crotch = 0.500 * v_height
+    # Heights in mm
+    h_sole   = 0.000 * v_height # Ground level
+    h_ankle  = 0.039 * v_height # Ankle joint center
+    h_calf   = 0.200 * v_height # Lower leg max
+    h_knee   = 0.285 * v_height # Knee joint center
+    h_thigh  = 0.400 * v_height # Upper leg max
+    h_crotch = 0.500 * v_height # Leg top
 
-    # leg height (ankle → crotch)
+    # Calculate leg height (ankle to crotch)
     leg_height = h_crotch - h_ankle
 
-    # dynamic offsets (% of leg height)
-    garment_bot_offset = 0.07 * leg_height
-    garment_top_offset = 0.14 * leg_height
+    # Dynamic offsets as a percentage of leg height
+    garment_bot_offset = 0.07 * leg_height # 7% of leg height above ankle
+    garment_top_offset = 0.14 * leg_height # 14% of leg height below crotch
 
-    # garment heights
-    h_garment_bot = h_ankle + garment_bot_offset
-    h_garment_top = h_crotch - garment_top_offset
+    # Adjusted heights for garment
+    h_garment_bot = h_ankle + garment_bot_offset  # Slightly above ankle
+    h_garment_top = h_crotch - garment_top_offset # Slightly below crotch
 
-    # lengths (mm)
+    # Calculated segment lengths in mm
     tibia_length      = h_knee - h_ankle
     femur_length      = h_crotch - h_knee
-    femur_length_real = 0.245 * v_height
-    garment_length    = 0.98 * (h_garment_top - h_garment_bot)
+    femur_length_real = 0.245 * v_height # From hip joint to knee
+    garment_length    = 0.98 * (h_garment_top - h_garment_bot) # Outer leg length
 
-    # circle points (359°)
     def CirclePoints359(r, z, n=nb_point):
         pts = []
         if n <= 1:
@@ -579,7 +591,7 @@ def ComputeCurves(ankle_cm, calf_cm, knee_cm, thigh_cm, height_cm, nb_point=32):
             pts.extend([x, y, z])
         return pts
 
-    # radii in mm
+    # Radii in mm (circumference in cm → radius in mm)
     r_ankle = v_ankle / (2.0 * math.pi)
     r_calf  = v_calf  / (2.0 * math.pi)
     r_knee  = v_knee  / (2.0 * math.pi)
@@ -596,7 +608,7 @@ def ComputeCurves(ankle_cm, calf_cm, knee_cm, thigh_cm, height_cm, nb_point=32):
     curves = []
     for i, pts in enumerate(curves_pts):
         curves.append({
-            "definition": {"points": pts, "open": False},  # closed on service side
+            "definition": {"points": pts, "open": False}, # Closed semantics on service side
             "properties": {"uuid": i, "name": f"curve_{i}", "type": "LINES", "scale": 1000},
             "dimension": 3
         })
@@ -608,11 +620,11 @@ def ComputeCurves(ankle_cm, calf_cm, knee_cm, thigh_cm, height_cm, nb_point=32):
         "femur_length": femur_length,
         "femur_length_real": femur_length_real,
         "garment_length": garment_length,
-        "garment_bot_offset_cm": garment_bot_offset / scale,
-        "garment_top_offset_cm": garment_top_offset / scale,
+        "garment_bot_offset_cm": garment_bot_offset / scale, # Return in cm
+        "garment_top_offset_cm": garment_top_offset / scale, # Return in cm
     }
 
-# mm → cm (2d/3d)
+# ============ Scaling for cm Display ============
 def NodesToCentimeter(nodes_mm: List[float], is3d: bool = True):
     n = len(nodes_mm) // 3
     x = [nodes_mm[3*i + 0] / 10.0 for i in range(n)]
@@ -622,7 +634,7 @@ def NodesToCentimeter(nodes_mm: List[float], is3d: bool = True):
         return x, y, z
     return x, y
 
-# 2d helpers
+# ============ 2D Helpers ============
 def ComputeBoundaryEdges(defn: dict) -> List[List[int]]:
   topo  = int(defn.get("topology") or 0)
   elems = defn.get("elements") or []
@@ -675,7 +687,7 @@ def ComputeBoundaryEdges(defn: dict) -> List[List[int]]:
       loop.append(v)
   return loops
 
-# 2d render (filled)
+# ============ 2D Rendering ============
 def DrawMeshShade2D(mesh_obj: dict):
   defn = mesh_obj.get("definition", {})
   nodes = defn.get("nodes") or []
@@ -705,7 +717,7 @@ def DrawMeshShade2D(mesh_obj: dict):
     loops = ComputeBoundaryEdges(defn)
     x_all, y_all = NodesToCentimeter(nodes, False)
     if not loops:
-      return DrawMeshWire2D(mesh_obj)
+      return draw_mesh_2d_wire(mesh_obj)
     for seq in loops:
       if len(seq) >= 3:
         xseq = [x_all[i] for i in seq] + [x_all[seq[0]]]
@@ -717,7 +729,7 @@ def DrawMeshShade2D(mesh_obj: dict):
           name="contour"
         ))
   else:
-    return DrawMeshWire2D(mesh_obj)
+    return draw_mesh_2d_wire(mesh_obj)
 
   fig.update_layout(
     margin=dict(l=0, r=0, t=0, b=0),
@@ -726,9 +738,9 @@ def DrawMeshShade2D(mesh_obj: dict):
     showlegend=False,
     hovermode=False
   )
-  PlotFrench(fig)
 
-# 2d render (wire)
+  PlotFrench(fig) # plot in french
+
 def DrawMeshWire2D(mesh_obj: dict):
   defn = mesh_obj.get("definition", {})
   nodes = defn.get("nodes") or []
@@ -743,7 +755,7 @@ def DrawMeshWire2D(mesh_obj: dict):
   x, y = NodesToCentimeter(nodes, False)
   xl, yl = [], []
 
-  def AddEdge(a, b):
+  def AddEde(a, b):
     xl.extend([x[a], x[b], None])
     yl.extend([y[a], y[b], None])
 
@@ -757,13 +769,13 @@ def DrawMeshWire2D(mesh_obj: dict):
         if a > b: a, b = b, a
         edges.add((a, b))
     for a, b in edges:
-      AddEdge(a, b)
+      AddEde(a, b)
   else:
     if not elidx:
       for i2 in range(len(elements)):
         a = elements[i2]
         b = elements[(i2+1) % len(elements)]
-        AddEdge(a, b)
+        AddEde(a, b)
     else:
       first = 0
       for last in elidx:
@@ -771,7 +783,7 @@ def DrawMeshWire2D(mesh_obj: dict):
         for i2 in range(len(seq)):
           a = seq[i2]
           b = seq[(i2+1) % len(seq)]
-          AddEdge(a, b)
+          AddEde(a, b)
         first = last + 1
 
   fig = go.Figure(data=[go.Scatter(x=xl, y=yl, mode="lines",
@@ -783,11 +795,13 @@ def DrawMeshWire2D(mesh_obj: dict):
     showlegend=False,
     hovermode=False
   )
-  PlotFrench(fig)
 
-# 3d helpers
+  PlotFrench(fig) # plot in french
+
+# ============ 3D Edge Helpers ============
 def AddWire3D(fig, x, y, z, elems, topo, elidx):
   xl, yl, zl = [], [], []
+
   def AddEdge(a, b):
     xl.extend([x[a], x[b], None])
     yl.extend([y[a], y[b], None])
@@ -854,7 +868,7 @@ def AddBoundaryEdges3D(fig, x, y, z, elems, topo):
       line=dict(width=EDGE3D_BORDER_WIDTH, color=EDGE3D_BORDER_COLOR)
     ))
 
-# 3d render (shaded)
+# ============ 3D Rendering ============
 def DrawMeshShade3D(mesh_obj: dict, edge_mode: str = "Bord"):
   defn = mesh_obj.get("definition", {})
   nodes = defn.get("nodes") or []
@@ -874,6 +888,7 @@ def DrawMeshShade3D(mesh_obj: dict, edge_mode: str = "Bord"):
       AddBoundaryEdges3D(fig, x, y, z, elems, topo)
     elif edge_mode == "Toutes":
       AddWire3D(fig, x, y, z, elems, topo, elidx)
+    # "Aucune" -> do nothing
 
   if topo in (3, 4) and len(elems) >= topo:
     i_idx, j_idx, k_idx = [], [], []
@@ -924,9 +939,9 @@ def DrawMeshShade3D(mesh_obj: dict, edge_mode: str = "Bord"):
     showlegend=False,
     hovermode=False
   )
-  PlotFrench(fig)
 
-# 3d render (wire)
+  PlotFrench(fig) # plot in french
+
 def DrawMeshWire3D(mesh_obj: dict):
   defn = mesh_obj.get("definition", {})
   nodes = defn.get("nodes") or []
@@ -947,17 +962,20 @@ def DrawMeshWire3D(mesh_obj: dict):
     showlegend=False,
     hovermode=False
   )
-  PlotFrench(fig)
 
-# ui layout
+  PlotFrench(fig) # plot in french
+
+# ============ UI Layout ============
 col_left, col_right = st.columns([1.0, 1.2], gap="large")
 
-# api keys (fallback local)
-api_key    = st.secrets.get("WECOV3R_API_KEY", os.getenv("WECOV3R_API_KEY", ""))
-api_secret = st.secrets.get("WECOV3R_API_SECRET", os.getenv("WECOV3R_API_SECRET", ""))
-api_user   = st.secrets.get("WECOV3R_API_USER", os.getenv("WECOV3R_API_USER", "-1"))
+# Read API keys from Streamlit secrets (with fallback for local testing)
+#api_key    = st.secrets.get("WECOV3R_API_KEY", os.getenv("WECOV3R_API_KEY", ""))
+#api_secret = st.secrets.get("WECOV3R_API_SECRET", os.getenv("WECOV3R_API_SECRET", ""))
+api_key    = "bc1794e6d394e7ce19d3"
+api_secret = "5f1da2aa59506f580a0f"
 
-if not api_key or not api_secret or not api_user:
+# Optionally, block Run if secrets are missing
+if not api_key or not api_secret:
   st.warning("Clés WeCov3r manquantes ")
 
 data = None
@@ -970,15 +988,15 @@ do_unroll = True
 with col_left:
   st.markdown('<div class="block small-input">', unsafe_allow_html=True)
   st.subheader("Jambe (cm)")
-  # ankle/calf
+  # Ankle and Calf
   r1a, r1b = st.columns([1, 1], gap="small", vertical_alignment="bottom")
   cheville = r1a.number_input("Cheville", 1.0, 1000.0, step=0.1, format="%.1f", key="cheville")
   mollet   = r1b.number_input("Mollet",   1.0, 1000.0, step=0.1, format="%.1f", key="mollet")
-  # knee/thigh
+  # Knee and Thigh
   r2a, r2b = st.columns([1, 1], gap="small", vertical_alignment="bottom")
   genou  = r2a.number_input("Genou",  1.0, 1000.0, step=0.1, format="%.1f", key="genou")
   cuisse = r2b.number_input("Cuisse", 1.0, 1000.0, step=0.1, format="%.1f", key="cuisse")
-  # height + buttons
+  # Height and Buttons
   r3a, r3b = st.columns([1, 1], gap="small", vertical_alignment="bottom")
   taille = r3a.number_input("Taille", 1.0, 300.0, step=0.1, format="%.1f", key="taille")
   g_run, g_raz, g_flat = r3b.columns([1, 1, 1], gap="small", vertical_alignment="bottom")
@@ -991,9 +1009,9 @@ with col_left:
     st.rerun()
   st.markdown('</div>', unsafe_allow_html=True)
 
-# compute + fetch
+# Compute and fetch results
 if run_btn:
-  if not api_key or not api_secret or not api_user:
+  if not api_key or not api_secret:
     with col_left:
       st.error("Clés WeCov3r manquantes !")
   else:
@@ -1012,7 +1030,7 @@ if run_btn:
       garment_length_cm = garment_length / 10.0
 
       curves  = result["curves"]
-      resp    = RunPipeline(curves, api_key, api_secret, api_user, do_unroll=do_unroll)
+      resp    = RunPipeline(curves, api_key, api_secret, do_unroll=do_unroll)
       data    = (resp or {}).get("data", [{}])[0]
       infos   = data.get("infos", {})
       area_m2 = infos.get("area")
@@ -1029,7 +1047,7 @@ if run_btn:
       with col_left:
         st.error(f"Erreur: {ex}")
 
-# display results
+# Display results
 with col_left:
   st.markdown('<div class="block">', unsafe_allow_html=True)
   st.subheader("Calculs")
@@ -1048,23 +1066,27 @@ with col_left:
       r2.write(f"**Volume (L)** : {Format1(vol_l)}")
   st.markdown('</div>', unsafe_allow_html=True)
 
-# render mesh
+# Render mesh
 with col_right:
   st.markdown('<div class="block">', unsafe_allow_html=True)
   st.subheader("Affichage")
+  # Side-by-side combos
   c_mode, c_edge = st.columns([1, 1], gap="small")
+  # Display mode
   if do_unroll:
     opts = ["Rempli", "Filaire"]; default = "Rempli"
   else:
     opts = ["Ombré", "Filaire"]; default = "Ombré"
   with c_mode:
     mode = st.selectbox("Rendu", opts, index=opts.index(default))
+  # Edge mode (only relevant for 3D shaded)
   with c_edge:
     if (mode == "Ombré") and (not do_unroll):
       edge_mode = st.selectbox("Arêtes", ["Aucun", "Bord", "Toutes"], index=1)
     else:
       edge_mode = "None"
-      st.markdown("<div style='height:2.5em'></div>", unsafe_allow_html=True)
+      # Placeholder to keep the line at similar height
+      st.markdown("<div style='height:2.6em'></div>", unsafe_allow_html=True)
 
   if data is None:
     st.info("Run pour lancer le calcul")
