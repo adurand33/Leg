@@ -478,13 +478,13 @@ def CallAPI(url: str, payload: dict, bearer: Optional[str] = None, timeout_s: fl
 def RunPipeline(curves: list, api_key: str, api_secret: str, api_user: int, do_unroll: bool = True) -> dict:
   # connect
   r1 = CallAPI("https://wecov3r.com/api/connect", {"k": api_key, "s": api_secret, "usr": api_user})
-  st.write("API connect:", r1)  # Debug line
+  # st.write("API connect:", r1)
 
   data1 = r1.get("data")
 
   # token
   r2 = CallAPI("https://wecov3r.com/api/token", {"c": data1, "u": "mesh"})
-  st.write("API token:", r2)  # Debug line
+  # st.write("API token:", r2)  # Debug line
 
   data2 = r2.get("data")
   token = data2.get("token") if isinstance(data2, dict) else data2
@@ -505,7 +505,7 @@ def RunPipeline(curves: list, api_key: str, api_secret: str, api_user: int, do_u
   }
   payload1 = {"globals": [], "data": curves, "operators": [op_wire]}
   r3 = CallAPI("https://wecov3r.com/api/mesh", payload1, bearer=token)
-  st.write("API meshWIRE:", r3)  # Debug line
+  # st.write("API meshWIRE:", r3)  # Debug line
 
   if not do_unroll:
     return r3
@@ -530,7 +530,7 @@ def RunPipeline(curves: list, api_key: str, api_secret: str, api_user: int, do_u
   }
   payload2 = {"globals": [], "data": r3.get("data"), "operators": [op_unroll]}
   r4 = CallAPI("https://wecov3r.com/api/mesh", payload2, bearer=token)
-  st.write("API meshUNROLL:", r4)  # Debug line
+  # st.write("API meshUNROLL:", r4)  # Debug line
 
   return r4
 
