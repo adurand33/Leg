@@ -466,8 +466,7 @@ def CallAPI(url: str, payload: dict, bearer: Optional[str] = None, timeout_s: fl
   # simple post wrapper
   headers = {
     "Content-Type": "application/json",
-    "Origin": "https://wecov3r.com",
-    "Referer": "https://wecov3r.com/",
+    "Referer": "",
     "X-Requested-With": "XMLHttpRequest",
   }
   if bearer:
@@ -481,10 +480,10 @@ def RunPipeline(curves: list, api_key: str, api_secret: str, api_user: int, do_u
   r1 = CallAPI("https://wecov3r.com/api/connect", {"k": api_key, "s": api_secret, "usr": api_user})
   st.write("API response:", r1)  # Debug line
 
-  ctx_code = r1.get("data")
+  data1 = r1.get("data")
 
   # token
-  r2 = CallAPI("https://wecov3r.com/api/token", {"c": ctx_code, "u": "mesh"})
+  r2 = CallAPI("https://wecov3r.com/api/token", {"c": data1, "u": "mesh"})
   data2 = r2.get("data")
   token = data2.get("token") if isinstance(data2, dict) else data2
 
