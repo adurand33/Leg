@@ -20,15 +20,12 @@ import plotly.graph_objects as go
 if "lang" not in st.session_state:
     st.session_state["lang"] = "fr"  # fr by default
 
-
 def is_french() -> bool:
     return st.session_state.get("lang", "fr") == "fr"
-
 
 def TR(fr: str, en: str) -> str:
     """simple fr/en translation based on session language."""
     return fr if is_french() else en
-
 
 # -----------------------------------------------------------------------------
 # simple helpers
@@ -39,7 +36,6 @@ def ConvertHexToRGB(h: str, a: float) -> str:
         h = "".join(c * 2 for c in h)
     r, g, b = int(h[:2], 16), int(h[2:4], 16), int(h[4:], 16)
     return f"rgba({r},{g},{b},{a})"
-
 
 def GetExtents(vals):
     mn, mx = math.inf, -math.inf
@@ -53,12 +49,10 @@ def GetExtents(vals):
         return (mn - 0.5, mx + 0.5)
     return (mn, mx)
 
-
 def Format1(x: Optional[float], decimals: int = 1) -> str:
     if x is None:
         return "—"
     return f"{x:,.{decimals}f}".replace(",", " ")
-
 
 def NodesToCentimeter(nodes_mm: List[float], is3d: bool = True):
     n = len(nodes_mm) // 3
@@ -68,7 +62,6 @@ def NodesToCentimeter(nodes_mm: List[float], is3d: bool = True):
         z = [nodes_mm[3 * i + 2] / 10.0 for i in range(n)]
         return x, y, z
     return x, y
-
 
 # -----------------------------------------------------------------------------
 # PlotFrench / PlotEnglish + RenderFigure
@@ -169,7 +162,6 @@ def _common_plot_layout(
 
     return f
 
-
 def PlotFrench(fig: go.Figure, height: int = 450):
     f = _common_plot_layout(fig)
     div_id = f"plot-fr-{uuid.uuid4().hex}"
@@ -225,7 +217,6 @@ def PlotFrench(fig: go.Figure, height: int = 450):
 
     html(custom_html, height=height)
 
-
 def PlotEnglish(fig: go.Figure, height: int = 450):
     f = _common_plot_layout(fig)
     div_id = f"plot-en-{uuid.uuid4().hex}"
@@ -253,9 +244,9 @@ def PlotEnglish(fig: go.Figure, height: int = 450):
     titles_en = [
         "Zoom",
         "Translation",
-        "Orbital rotation",
-        "Planar rotation",
-        "Reset view",
+        "Orbital Rotation",
+        "Planar Rotation",
+        "Reset View",
         "Download PNG",
     ]
 
@@ -281,13 +272,11 @@ def PlotEnglish(fig: go.Figure, height: int = 450):
 
     html(custom_html, height=height)
 
-
 def RenderFigure(fig: go.Figure, height: int = 450):
     if is_french():
         PlotFrench(fig, height=height)
     else:
         PlotEnglish(fig, height=height)
-
 
 # -----------------------------------------------------------------------------
 # styles and constants
@@ -317,7 +306,6 @@ if st.session_state["_do_raz"]:
         st.session_state[key] = value
     st.session_state["_do_raz"] = False
 
-
 # -----------------------------------------------------------------------------
 # http / wecov3r api
 # -----------------------------------------------------------------------------
@@ -332,7 +320,6 @@ def CallAPI(url: str, payload: dict, bearer: Optional[str] = None, timeout_s: fl
     r = requests.post(url, headers=headers, json=payload, timeout=timeout_s)
     r.raise_for_status()
     return r.json()
-
 
 def RunPipeline(curves: list, api_key: str, api_secret: str, api_user: int, do_unroll: bool = True) -> dict:
     r1 = CallAPI("https://wecov3r.com/api/connect", {"k": api_key, "s": api_secret, "usr": api_user})
@@ -380,7 +367,6 @@ def RunPipeline(curves: list, api_key: str, api_secret: str, api_user: int, do_u
     payload2 = {"globals": [], "data": r3.get("data"), "operators": [op_unroll]}
     r4 = CallAPI("https://wecov3r.com/api/mesh", payload2, bearer=token)
     return r4
-
 
 # -----------------------------------------------------------------------------
 # 2d: boundary edges
@@ -438,7 +424,6 @@ def ComputeBoundaryEdges(defn: dict) -> List[List[int]]:
             loop.append(v)
 
     return loops
-
 
 # -----------------------------------------------------------------------------
 # 2d: shaded / wireframe
@@ -503,7 +488,6 @@ def DrawMeshShade2D(mesh_obj: dict):
     )
     RenderFigure(fig)
 
-
 def DrawMeshWire2D(mesh_obj: dict):
     defn = mesh_obj.get("definition", {})
     nodes = defn.get("nodes") or []
@@ -565,7 +549,6 @@ def DrawMeshWire2D(mesh_obj: dict):
     )
     RenderFigure(fig)
 
-
 # -----------------------------------------------------------------------------
 # 3d helpers and display
 # -----------------------------------------------------------------------------
@@ -615,7 +598,6 @@ def AddWire3D(fig, x, y, z, elems, topo, elidx):
             line=dict(width=EDGE3D_BORDER_WIDTH, color=EDGE3D_BORDER_COLOR),
         ))
 
-
 def AddBoundaryEdges3D(fig, x, y, z, elems, topo):
     if topo not in (3, 4) or not elems:
         return
@@ -646,7 +628,6 @@ def AddBoundaryEdges3D(fig, x, y, z, elems, topo):
             name="border",
             line=dict(width=EDGE3D_BORDER_WIDTH, color=EDGE3D_BORDER_COLOR),
         ))
-
 
 def DrawMeshShade3D(mesh_obj: dict, edge_mode: str = "Bord"):
     defn = mesh_obj.get("definition", {})
@@ -746,7 +727,6 @@ def DrawMeshShade3D(mesh_obj: dict, edge_mode: str = "Bord"):
     )
     RenderFigure(fig)
 
-
 def DrawMeshWire3D(mesh_obj: dict):
     defn = mesh_obj.get("definition", {})
     nodes = defn.get("nodes") or []
@@ -774,7 +754,6 @@ def DrawMeshWire3D(mesh_obj: dict):
         hovermode=False,
     )
     RenderFigure(fig)
-
 
 # -----------------------------------------------------------------------------
 # leg geometry
@@ -865,7 +844,6 @@ def ComputeCurves(
         "garment_bot_offset_cm": garment_bot_offset / scale,
         "garment_top_offset_cm": garment_top_offset / scale,
     }
-
 
 # -----------------------------------------------------------------------------
 # streamlit page
