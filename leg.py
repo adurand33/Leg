@@ -24,7 +24,7 @@ def is_french() -> bool:
     return st.session_state.get("lang", "fr") == "fr"
 
 def TR(fr: str, en: str) -> str:
-    """simple fr/en translation based on session language."""
+    """simple fr/en translation based on session language"""
     return fr if is_french() else en
 
 # -----------------------------------------------------------------------------
@@ -978,8 +978,8 @@ if run_btn:
     if not api_key or not api_secret or api_user < 0:
         with col_left:
             st.error(TR(
-                "Clés WeCov3r manquantes, impossible d'appeler l'API.",
-                "Missing WeCov3r Keys, Cannot Call API.",
+                "Clés WeCov3r manquantes, impossible d'appeler l'API",
+                "Missing WeCov3r Keys, Cannot Call API",
             ))
     else:
         try:
@@ -1073,7 +1073,7 @@ with col_right:
             st.markdown("<div style='height:2.5em'></div>", unsafe_allow_html=True)
 
     if data is None:
-        st.info(TR("Lancer pour calculer.", "Run to compute."))
+        st.info(TR("Lancer pour calculer", "Run to compute"))
     else:
         if mode == TR("Rempli", "Filled") and do_unroll:
             DrawMeshShade2D(data)
